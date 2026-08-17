@@ -1,35 +1,30 @@
 package vn.edu.crs.course_service.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import vn.edu.crs.course_service.security.JwtAuthFilter;
 
 @Configuration
-@RequiredArgsConstructor
+@EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/internal/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/courses", "/courses/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/courses", "/courses/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/courses", "/courses/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/courses", "/courses/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                // 1. Tắt CSRF để Postman có thể gửi POST, PUT, DELETE
+                .csrf(csrf -> csrf.disable())
+
+                // 2. Không lưu session (Stateless)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // 3. Cho phép tất cả request vào /courses/** và /internal/**
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/courses/**", "/internal/**").permitAll()
+                        .anyRequest().permitAll() // Cho phép tất cả trong buổi 2
+                );
 
         return http.build();
     }
